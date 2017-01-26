@@ -5,7 +5,7 @@
  * Pipeline Utility Steps Plugin: https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Utility+Steps+Plugin
  * HTML Publisher Plugin: https://wiki.jenkins-ci.org/display/JENKINS/HTML+Publisher+Plugin
  */
-def version = '0.0.1-SNAPSHOT'
+def version = '0.0.1'
 
 def buildAndTest() {
   stage('build') {
