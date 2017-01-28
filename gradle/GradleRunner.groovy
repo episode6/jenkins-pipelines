@@ -20,7 +20,7 @@ def buildAndTest() {
 def runGradle(String stageName, String execStr, boolean shouldCollectReports) {
   Exception err
   try {
-    sh "(set -o pipefail; ./gradlew ${execStr} | tee ${outputLogFilename(stageName)})"
+    sh "./gradlew ${execStr} | tee ${outputLogFilename(stageName)} ; test \${PIPESTATUS[0]} -eq 0"
   } catch (Exception e) {
     err = e
     currentBuild.result = "FAILURE"
