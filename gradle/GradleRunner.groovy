@@ -69,7 +69,7 @@ def notifyFailure(String stageName) {
     return
   }
 
-  String message = "Job Failed: ${env.JOB_NAME}\nStage: ${stageName}"
+  String message = "Job Failed: ${env.JOB_NAME}\nBuild #${env.BUILD_NUMBER}\nStage: ${stageName}"
   try {
     sh "curl " +
         "-F \"token=${env.PUSHBULLET_API_KEY}\" " +
