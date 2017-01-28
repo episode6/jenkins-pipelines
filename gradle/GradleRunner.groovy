@@ -25,7 +25,9 @@ def runGradle(String stageName, String execStr, boolean shouldCollectReports) {
     err = e
     currentBuild.result = "FAILURE"
   } finally {
-    notifyFailure(stageName)
+    if (err) {
+      notifyFailure(stageName)
+    }
     if (shouldCollectReports) {
       collectReports()
     }
