@@ -9,24 +9,26 @@ def version = '0.0.1'
 
 def buildAndTest() {
   stage('build') {
-    sh "./gradlew clean assemble"
+    runGradle("build", "clean assemble", false)
   }
 
   stage('test') {
-    runTests('test')
+    runGradle("test", "check", true)
   }
 }
 
-def runTests(String stageName) {
+def runGradle(String stageName, String execStr, boolean shouldCollectReports) {
   Exception err
   try {
-    sh "./gradlew check"
+    sh "./gradlew ${execStr}"
   } catch (Exception e) {
     err = e
     currentBuild.result = "FAILURE"
   } finally {
-    notifyFailure(stageName, err)
-    collectReports()
+    notifyFailure(stageName)
+    if (shouldCollectReports) {
+      collectReports()
+    }
     if (err) {
       throw err
     }
@@ -60,22 +62,24 @@ def collectHtmlReports(Map findIndexFilesParams) {
   }
 }
 
-def notifyFailure(String stageName, Exception ex) {
+def notifyFailure(String stageName) {
   if (!env.PUSHBULLET_USER_KEY || !env.PUSHBULLET_API_KEY) {
     return
   }
 
-  String message = "Job Failed: ${env.JOB_NAME} Stage: ${stageName}"
-  if (ex) {
-    message = "${message}\n${ex.getMessage()}"
+  String message = "Job Failed: ${env.JOB_NAME}\nStage: ${stageName}"
+  try {
+    sh "curl " +
+        "-F \"token=${env.PUSHBULLET_API_KEY}\" " +
+        "-F \"user=${env.PUSHBULLET_USER_KEY}\" " +
+        "-F \"message=${message}\" " +
+        "-F \"url=${env.BUILD_URL}\" " +
+        "-F \"url_title=Open Build\" " +
+        "https://api.pushover.net/1/messages.json"
+  } catch (Exception e) {
+    // fail quietly, since we've already failed the build by this point
+    println "Failed to send pushover notification: ${e.getMessage()}"
   }
-  sh "curl " +
-      "-F \"token=${env.PUSHBULLET_API_KEY}\" " +
-      "-F \"user=${env.PUSHBULLET_USER_KEY}\" " +
-      "-F \"message=${message}\" " +
-      "-F \"url=${env.BUILD_URL}\" " +
-      "-F \"url_title=Open Build\" " +
-      "https://api.pushover.net/1/messages.json"
 }
 
 return this
