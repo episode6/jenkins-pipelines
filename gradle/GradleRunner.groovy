@@ -20,11 +20,12 @@ def buildAndTest() {
 def runGradle(String stageName, String execStr, boolean shouldCollectReports) {
   Exception err
   try {
-    sh "./gradlew ${execStr}"
+    sh "./gradlew ${execStr} > ${outputLogFilename(stageName)}"
   } catch (Exception e) {
     err = e
     currentBuild.result = "FAILURE"
   } finally {
+    sh "cat ${outputLogFilename(stageName)}"
     if (err) {
       notifyFailure(stageName)
     }
@@ -70,6 +71,14 @@ def notifyFailure(String stageName) {
   }
 
   String message = "Job Failed: ${env.JOB_NAME}\nBuild #${env.BUILD_NUMBER}\nStage: ${stageName}"
+  def outputLogs = readFile(outputLogFilename(stageName)).tokenize("\n")
+  for (int i = 0; i < outputLogs.size(); i++) {
+    String logLine = outputLogs[i]
+    if (logLine.contains("FAILED")) {
+      message = "${message}\n\n${logLine}"
+    }
+  }
+
   try {
     sh "curl " +
         "-F \"token=${env.PUSHBULLET_API_KEY}\" " +
@@ -82,6 +91,10 @@ def notifyFailure(String stageName) {
     // fail quietly, since we've already failed the build by this point
     println "Failed to send pushover notification: ${e.getMessage()}"
   }
+}
+
+def outputLogFilename(String stageName) {
+  return "${stageName}-output-log"
 }
 
 return this
