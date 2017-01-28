@@ -13,11 +13,11 @@ def buildAndTest() {
   }
 
   stage('test') {
-    runTests()
+    runTests('test')
   }
 }
 
-def runTests() {
+def runTests(String stageName) {
   Exception err
   try {
     sh "./gradlew check"
@@ -25,6 +25,7 @@ def runTests() {
     err = e
     currentBuild.result = "FAILURE"
   } finally {
+    notifyFailure(stageName, err)
     collectReports()
     if (err) {
       throw err
@@ -57,6 +58,24 @@ def collectHtmlReports(Map findIndexFilesParams) {
         reportFiles: 'index.html',
         reportName: "${prefix} report (${i})"])
   }
+}
+
+def notifyFailure(String stageName, Exception ex) {
+  if (!env.PUSHBULLET_USER_KEY || !env.PUSHBULLET_API_KEY) {
+    return
+  }
+
+  String message = "Job Failed: ${env.JOB_NAME} Stage: ${stageName}"
+  if (ex) {
+    message = "${message}\n${ex.getMessage()}"
+  }
+  sh "curl " +
+      "-F \"token=${env.PUSHBULLET_API_KEY}\" " +
+      "-F \"user=${env.PUSHBULLET_USER_KEY}\" " +
+      "-F \"message=${message}\" " +
+      "-F \"url=${env.BUILD_URL}\" " +
+      "-F \"url_title=Open Build\" " +
+      "https://api.pushover.net/1/messages.json"
 }
 
 return this
