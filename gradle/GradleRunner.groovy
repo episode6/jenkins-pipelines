@@ -20,11 +20,12 @@ def buildAndTest() {
 def runGradle(String stageName, String execStr, boolean shouldCollectReports) {
   Exception err
   try {
-    sh "./gradlew ${execStr} | tee ${outputLogFilename(stageName)} ; test \${PIPESTATUS[0]} -eq 0"
+    sh "./gradlew ${execStr} > ${outputLogFilename(stageName)}"
   } catch (Exception e) {
     err = e
     currentBuild.result = "FAILURE"
   } finally {
+    sh "cat ${outputLogFilename(stageName)}"
     if (err) {
       notifyFailure(stageName)
     }
