@@ -23,7 +23,7 @@ def maybeDeploy() {
     def branchName = env.BRANCH_NAME
     def isSnapshot = projectVersion.contains("SNAPSHOT")
 
-    if ((branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)) {
+    if (projectVersion && (branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)) {
       println "Deploying ${env.JOB_NAME} v${projectVersion}"
       runGradle("deploy", "deploy", false)
       if (!isSnapshot) {
