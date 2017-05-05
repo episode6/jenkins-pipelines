@@ -25,7 +25,8 @@ def maybeDeploy() {
 
     if ((branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)) {
       println "Deploying ${env.JOB_NAME} v${projectVersion}"
-      notifyPushbullet("Deploy Test")
+      runGradle("deploy", "deploy", false)
+      notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}")
     } else {
       println "Skipping deploy of ${env.JOB_NAME} v${projectVersion}"
     }
