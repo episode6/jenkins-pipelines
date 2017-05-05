@@ -20,6 +20,15 @@ def buildAndTest() {
 def maybeDeploy() {
   stage('deploy') {
     def projectVersion = getProjectVersion()
+    def branchName = env.BRANCH_NAME
+    def isSnapshot = projectVersion.contains("SNAPSHOT")
+
+    if ((branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)) {
+      println "Deploying ${env.JOB_NAME} v${projectVersion}"
+    } else {
+      println "Skipping deploy of ${env.JOB_NAME} v${projectVersion}"
+    }
+
     echo "LOOKED UP Project Version: ${projectVersion}"
     sh 'env'
   }
