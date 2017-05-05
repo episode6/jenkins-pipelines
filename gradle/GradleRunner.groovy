@@ -5,7 +5,7 @@
  * Pipeline Utility Steps Plugin: https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Utility+Steps+Plugin
  * HTML Publisher Plugin: https://wiki.jenkins-ci.org/display/JENKINS/HTML+Publisher+Plugin
  */
-def version = '0.0.3'
+def version = '0.0.4'
 
 def buildAndTest() {
   stage('build') {
@@ -14,6 +14,24 @@ def buildAndTest() {
 
   stage('test') {
     runGradle("test", "check", true)
+  }
+}
+
+def maybeDeploy() {
+  stage('deploy') {
+    def projectVersion = getProjectVersion()
+    def branchName = env.BRANCH_NAME
+    def isSnapshot = projectVersion.contains("SNAPSHOT")
+
+    if (projectVersion && (branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)) {
+      println "Deploying ${env.JOB_NAME} v${projectVersion}"
+      runGradle("deploy", "deploy", false)
+      if (!isSnapshot) {
+        notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}")
+      }
+    } else {
+      println "Skipping deploy of ${env.JOB_NAME} v${projectVersion}"
+    }
   }
 }
 
@@ -66,10 +84,6 @@ def collectHtmlReports(Map findIndexFilesParams) {
 }
 
 def notifyFailure(String stageName) {
-  if (!env.PUSHBULLET_USER_KEY || !env.PUSHBULLET_API_KEY) {
-    return
-  }
-
   String message = "Job Failed: ${env.JOB_NAME}\nBuild #${env.BUILD_NUMBER}\nStage: ${stageName}"
   def outputLogs = readFile(outputLogFilename(stageName)).tokenize("\n")
   for (int i = 0; i < outputLogs.size(); i++) {
@@ -77,6 +91,13 @@ def notifyFailure(String stageName) {
     if (logLine.contains("FAILED")) {
       message = "${message}\n\n${logLine}"
     }
+  }
+  notifyPushbullet(message)
+}
+
+def notifyPushbullet(String message) {
+  if (!env.PUSHBULLET_USER_KEY || !env.PUSHBULLET_API_KEY) {
+    return
   }
 
   try {
@@ -95,6 +116,11 @@ def notifyFailure(String stageName) {
 
 def outputLogFilename(String stageName) {
   return "${stageName}-output-log"
+}
+
+def getProjectVersion() {
+  sh './gradlew properties | grep -o \'^version: .*$\' | sed \'s/version: //\' > __gradle_project.version'
+  return "${readFile("__gradle_project.version")}"
 }
 
 return this
