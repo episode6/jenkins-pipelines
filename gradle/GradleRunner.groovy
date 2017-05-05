@@ -28,9 +28,6 @@ def maybeDeploy() {
     } else {
       println "Skipping deploy of ${env.JOB_NAME} v${projectVersion}"
     }
-
-    echo "LOOKED UP Project Version: ${projectVersion}"
-    sh 'env'
   }
 }
 
