@@ -20,7 +20,7 @@ def buildAndTest() {
 def maybeDeploy() {
   stage('deploy') {
     def projectVersion = getProjectVersion()
-    println "LOOKED UP Project Version: ${projectVersion}"
+    echo "LOOKED UP Project Version: ${projectVersion}"
     sh 'env'
   }
 }
