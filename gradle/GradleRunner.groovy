@@ -17,6 +17,14 @@ def buildAndTest() {
   }
 }
 
+def maybeDeploy() {
+  stage('deploy') {
+    def projectVersion = getProjectVersion()
+    println "LOOKED UP Project Version: ${projectVersion}"
+    sh 'env'
+  }
+}
+
 def runGradle(String stageName, String execStr, boolean shouldCollectReports) {
   Exception err
   try {
@@ -95,6 +103,11 @@ def notifyFailure(String stageName) {
 
 def outputLogFilename(String stageName) {
   return "${stageName}-output-log"
+}
+
+def getProjectVersion() {
+  sh "./gradlew properties | grep -o '^version: .*$' | sed 's/version: //' > __gradle_project.version"
+  return readFile("__gradle_project.version")
 }
 
 return this
