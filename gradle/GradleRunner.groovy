@@ -20,7 +20,7 @@ def buildAndTest() {
 def maybeDeploy() {
   stage('deploy') {
     def projectVersion = getProjectVersion()
-    if (!projectVersion) {
+    if (!projectVersion || projectVersion == "unspecified") {
       def err = "Could not read projectVersion for job: ${env.JOB_NAME}, deploy failed."
       notifyPushbullet(err)
       error(err)
