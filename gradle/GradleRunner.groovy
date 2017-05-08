@@ -128,7 +128,7 @@ def outputLogFilename(String stageName) {
 
 def getProjectVersion() {
   sh './gradlew properties | grep -o \'^version: .*$\' | sed \'s/^version: //\' > __gradle_project.version'
-  return "${readFile("__gradle_project.version")}"
+  return "${readFile("__gradle_project.version")}".trim()
 }
 
 return this
