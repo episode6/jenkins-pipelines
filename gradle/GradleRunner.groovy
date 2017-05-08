@@ -5,7 +5,7 @@
  * Pipeline Utility Steps Plugin: https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Utility+Steps+Plugin
  * HTML Publisher Plugin: https://wiki.jenkins-ci.org/display/JENKINS/HTML+Publisher+Plugin
  */
-def version = '0.0.4'
+def version = '0.0.5'
 
 def buildAndTest() {
   stage('build') {
@@ -20,10 +20,17 @@ def buildAndTest() {
 def maybeDeploy() {
   stage('deploy') {
     def projectVersion = getProjectVersion()
+    if (!projectVersion || projectVersion == "unspecified") {
+      def err = "Could not read projectVersion for job: ${env.JOB_NAME}, deploy failed."
+      notifyPushbullet(err)
+      error(err)
+      return
+    }
+
     def branchName = env.BRANCH_NAME
     def isSnapshot = projectVersion.contains("SNAPSHOT")
 
-    if (projectVersion && (branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)) {
+    if ((branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)) {
       println "Deploying ${env.JOB_NAME} v${projectVersion}"
       runGradle("deploy", "deploy", false)
       if (!isSnapshot) {
@@ -119,8 +126,8 @@ def outputLogFilename(String stageName) {
 }
 
 def getProjectVersion() {
-  sh './gradlew properties | grep -o \'^version: .*$\' | sed \'s/version: //\' > __gradle_project.version'
-  return "${readFile("__gradle_project.version")}"
+  sh './gradlew properties | grep -o \'^version: .*$\' | sed \'s/^version: //\' > __gradle_project.version'
+  return "${readFile("__gradle_project.version")}".trim()
 }
 
 return this
