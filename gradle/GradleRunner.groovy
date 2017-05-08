@@ -20,10 +20,17 @@ def buildAndTest() {
 def maybeDeploy() {
   stage('deploy') {
     def projectVersion = getProjectVersion()
+    if (!projectVersion) {
+      def err = "Could not read projectVersion for job: ${env.JOB_NAME}, deploy failed."
+      notifyPushbullet(err)
+      error(err)
+      return
+    }
+
     def branchName = env.BRANCH_NAME
     def isSnapshot = projectVersion.contains("SNAPSHOT")
 
-    if (projectVersion && (branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)) {
+    if ((branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)) {
       println "Deploying ${env.JOB_NAME} v${projectVersion}"
       runGradle("deploy", "deploy", false)
       if (!isSnapshot) {
