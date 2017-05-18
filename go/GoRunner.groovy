@@ -67,7 +67,13 @@ def buildAndTest(String srcDir, String goName, String testTimeout = "10m") {
 
 def runGoCmds(String stageName, String srcDir, String goName, List<String> goCmds, boolean collectReports = false) {
   def goRoot = tool name: goName, type: 'go'
-  withEnv(["GOROOT=${goRoot}", "GOPATH+=:${pwd()}", "PATH+GO+=${goRoot}/bin:${pwd()}/bin"]) {
+  def goPath = pwd()
+  def binPath = "${goRoot}/bin:${goPath}/bin"
+  if (env.GOPATH) {
+    goPath = "${env.GOPATH}:${goPath}"
+    binPath = "${binPath}:${env.GOPATH/bin}"
+  }
+  withEnv(["GOROOT=${goRoot}", "GOPATH=${goPath}", "PATH+GO=${binPath}"]) {
     dir(srcDir) {
       try {
         runner.runStagedCommands(stageName, goCmds)
