@@ -77,7 +77,7 @@ def runGoCmds(String stageName, String srcDir, String goName, List<String> goCmd
           sh "cat ${logFileName} | go-junit-report > go_test_report.xml"
           junit(
               keepLongStdio: true,
-              testResults: 'go_test_report.xml')
+              testResults: '**/go_test_report.xml')
         }
       }
     }
