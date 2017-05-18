@@ -58,7 +58,7 @@ def buildAndTest(String srcDir, String goName, String testTimeout = "10m") {
       "go install ./..."])
   }
   stage('test') {
-    runGoCmds("test", srcDir, goName, ["go test -timeout ${testTimeout} ./..."])
+    runGoCmds("test", srcDir, goName, ["go test -timeout ${testTimeout} -cover ./..."])
   }
 }
 
