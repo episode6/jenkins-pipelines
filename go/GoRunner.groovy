@@ -61,7 +61,7 @@ def buildAndTest(String srcDir, String goName, String testTimeout = "10m") {
     runGoCmds("test_prep", srcDir, goName, ["go get -u github.com/jstemmer/go-junit-report"])
   }
   stage('test') {
-    runGoCmds("test", srcDir, goName, ["go test -timeout ${testTimeout} -cover ./..."], true)
+    runGoCmds("test", srcDir, goName, ["go test -v -timeout ${testTimeout} -cover ./..."], true)
   }
 }
 
