@@ -5,7 +5,9 @@
  * Pipeline Utility Steps Plugin: https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Utility+Steps+Plugin
  * HTML Publisher Plugin: https://wiki.jenkins-ci.org/display/JENKINS/HTML+Publisher+Plugin
  */
-def version = '0.0.5'
+def version = '0.0.6'
+notifier = load("common/Notifier.groovy")
+runner = load("common/Runner.groovy")
 
 def buildAndTest() {
   stage('build') {
@@ -22,7 +24,7 @@ def maybeDeploy() {
     def projectVersion = getProjectVersion()
     if (!projectVersion || projectVersion == "unspecified") {
       def err = "Could not read projectVersion for job: ${env.JOB_NAME}, deploy failed."
-      notifyPushbullet(err)
+      notifier.notifyPushbullet(err)
       error(err)
       return
     }
@@ -34,7 +36,7 @@ def maybeDeploy() {
       println "Deploying ${env.JOB_NAME} v${projectVersion}"
       runGradle("deploy", "deploy", false)
       if (!isSnapshot) {
-        notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}")
+        notifier.notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}")
       }
     } else {
       println "Skipping deploy of ${env.JOB_NAME} v${projectVersion}"
@@ -43,22 +45,11 @@ def maybeDeploy() {
 }
 
 def runGradle(String stageName, String execStr, boolean shouldCollectReports) {
-  Exception err
   try {
-    sh "./gradlew ${execStr} > ${outputLogFilename(stageName)}"
-  } catch (Exception e) {
-    err = e
-    currentBuild.result = "FAILURE"
+    runner.runStagedCommand(stageName, "./gradlew ${execStr}")
   } finally {
-    sh "cat ${outputLogFilename(stageName)}"
-    if (err) {
-      notifyFailure(stageName)
-    }
     if (shouldCollectReports) {
       collectReports()
-    }
-    if (err) {
-      throw err
     }
   }
 }
@@ -88,41 +79,6 @@ def collectHtmlReports(Map findIndexFilesParams) {
         reportFiles: 'index.html',
         reportName: "${prefix} report (${i})"])
   }
-}
-
-def notifyFailure(String stageName) {
-  String message = "Job Failed: ${env.JOB_NAME}\nBuild #${env.BUILD_NUMBER}\nStage: ${stageName}"
-  def outputLogs = readFile(outputLogFilename(stageName)).tokenize("\n")
-  for (int i = 0; i < outputLogs.size(); i++) {
-    String logLine = outputLogs[i]
-    if (logLine.contains("FAILED")) {
-      message = "${message}\n\n${logLine}"
-    }
-  }
-  notifyPushbullet(message)
-}
-
-def notifyPushbullet(String message) {
-  if (!env.PUSHBULLET_USER_KEY || !env.PUSHBULLET_API_KEY) {
-    return
-  }
-
-  try {
-    sh "curl " +
-        "-F \"token=${env.PUSHBULLET_API_KEY}\" " +
-        "-F \"user=${env.PUSHBULLET_USER_KEY}\" " +
-        "-F \"message=${message}\" " +
-        "-F \"url=${env.JOB_URL}\" " +
-        "-F \"url_title=Open Build\" " +
-        "https://api.pushover.net/1/messages.json"
-  } catch (Exception e) {
-    // fail quietly, since we've already failed the build by this point
-    println "Failed to send pushover notification: ${e.getMessage()}"
-  }
-}
-
-def outputLogFilename(String stageName) {
-  return "${stageName}-output-log"
 }
 
 def getProjectVersion() {
