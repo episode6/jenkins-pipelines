@@ -71,7 +71,7 @@ def runGoCmds(String stageName, String srcDir, String goName, List<String> goCmd
   def binPath = "${goRoot}/bin:${goPath}/bin"
   if (env.GOPATH) {
     goPath = "${env.GOPATH}:${goPath}"
-    binPath = "${binPath}:${env.GOPATH/bin}"
+    binPath = "${binPath}:${env.GOPATH}/bin"
   }
   withEnv(["GOROOT=${goRoot}", "GOPATH=${goPath}", "PATH+GO=${binPath}"]) {
     dir(srcDir) {
