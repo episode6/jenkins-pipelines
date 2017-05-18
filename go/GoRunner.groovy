@@ -50,7 +50,7 @@ def prepare(String srcDir, String goName, List<String> prepareCommands) {
   }
 }
 
-def buildAndTest(String srcDir, String goName) {
+def buildAndTest(String srcDir, String goName, String testTimeout = "10m") {
   stage('build') {
     runGoCmds("build", srcDir, goName, [
       "go get ./...",
@@ -58,7 +58,7 @@ def buildAndTest(String srcDir, String goName) {
       "go install ./..."])
   }
   stage('test') {
-    runGoCmds("test", srcDir, goName, ["go test ./..."])
+    runGoCmds("test", srcDir, goName, ["go test -timeout ${testTimeout} ./..."])
   }
 }
 
