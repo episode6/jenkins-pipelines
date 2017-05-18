@@ -57,16 +57,29 @@ def buildAndTest(String srcDir, String goName, String testTimeout = "10m") {
       "go build ./...",
       "go install ./..."])
   }
+  stage('test_prep') {
+    runGoCmds("test_prep", srcDir, goName, ["go get -u github.com/jstemmer/go-junit-report"])
+  }
   stage('test') {
-    runGoCmds("test", srcDir, goName, ["go test -timeout ${testTimeout} -cover ./..."])
+    runGoCmds("test", srcDir, goName, ["go test -timeout ${testTimeout} -cover ./..."], true)
   }
 }
 
-def runGoCmds(String stageName, String srcDir, String goName, List<String> goCmds) {
+def runGoCmds(String stageName, String srcDir, String goName, List<String> goCmds, boolean collectReports = false) {
   def goRoot = tool name: goName, type: 'go'
   withEnv(["GOROOT=${goRoot}", "GOPATH=${pwd()}", "PATH+GO=${goRoot}/bin:${pwd()}/bin"]) {
     dir(srcDir) {
-      runner.runStagedCommands(stageName, goCmds)
+      try {
+        runner.runStagedCommands(stageName, goCmds)
+      } finally {
+        if (collectReports) {
+          def logFileName = runner.getLogFileForStage(stageName)
+          sh "cat ${logFileName} | go-junit-report > go_test_report.xml"
+          junit(
+              keepLongStdio: true,
+              testResults: 'go_test_report.xml')
+        }
+      }
     }
   }
 }

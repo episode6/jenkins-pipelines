@@ -11,7 +11,7 @@ def runStagedCommand(String stageName, String command) {
 
 def runStagedCommands(String stageName, List<String> commands) {
   Exception err
-  String outputLogFilename = "${stageName}-output-log"
+  String outputLogFilename = getLogFileForStage(stageName)
   try {
     sh "echo \"\" > ${outputLogFilename}"
     for (String cmd : commands) {
@@ -29,6 +29,10 @@ def runStagedCommands(String stageName, List<String> commands) {
     }
     return outputLog
   }
+}
+
+def getLogFileForStage(String stageName) {
+  return "${stageName}-output-log"
 }
 
 return this
