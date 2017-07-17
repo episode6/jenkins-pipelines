@@ -5,7 +5,7 @@
  * Pipeline Utility Steps Plugin: https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Utility+Steps+Plugin
  * HTML Publisher Plugin: https://wiki.jenkins-ci.org/display/JENKINS/HTML+Publisher+Plugin
  */
-def version = '0.0.6'
+def version = '0.0.7'
 notifier = load("common/Notifier.groovy")
 runner = load("common/Runner.groovy")
 
@@ -46,7 +46,7 @@ def maybeDeploy() {
 
 def runGradle(String stageName, String execStr, boolean shouldCollectReports) {
   try {
-    runner.runStagedCommand(stageName, "./gradlew ${execStr}")
+    runner.runStagedCommand(stageName, "./gradlew --no-daemon ${execStr}")
   } finally {
     if (shouldCollectReports) {
       collectReports()
