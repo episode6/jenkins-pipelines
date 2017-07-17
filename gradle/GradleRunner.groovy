@@ -46,7 +46,7 @@ def maybeDeploy() {
 
 def runGradle(String stageName, String execStr, boolean shouldCollectReports) {
   try {
-    runner.runStagedCommand(stageName, "./gradlew ${execStr}")
+    runner.runStagedCommand(stageName, "./gradlew --no-daemon ${execStr}")
   } finally {
     if (shouldCollectReports) {
       collectReports()
