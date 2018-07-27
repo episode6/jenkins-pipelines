@@ -19,7 +19,7 @@ def buildAndTest() {
   }
 }
 
-def maybeDeploy() {
+def deploy(boolean onlyMainBranches = true) {
   stage('deploy') {
     def projectVersion = getProjectVersion()
     if (!projectVersion || projectVersion == "unspecified") {
@@ -31,8 +31,9 @@ def maybeDeploy() {
 
     def branchName = env.BRANCH_NAME
     def isSnapshot = projectVersion.contains("SNAPSHOT")
+    def shouldDeploy = (!onlyMainBranches) || (branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)
 
-    if ((branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)) {
+    if (shouldDeploy) {
       println "Deploying ${env.JOB_NAME} v${projectVersion}"
       runGradle("deploy", "deploy", false)
       if (!isSnapshot) {
