@@ -5,7 +5,7 @@
  * Pipeline Utility Steps Plugin: https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Utility+Steps+Plugin
  * HTML Publisher Plugin: https://wiki.jenkins-ci.org/display/JENKINS/HTML+Publisher+Plugin
  */
-def version = '0.0.8'
+def version = '0.0.9'
 notifier = load("common/Notifier.groovy")
 runner = load("common/Runner.groovy")
 
@@ -31,7 +31,7 @@ def deploy(boolean onlyMainBranches = true) {
 
     def branchName = env.BRANCH_NAME
     def isSnapshot = projectVersion.contains("SNAPSHOT")
-    def shouldDeploy = (!onlyMainBranches) || (branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)
+    def shouldDeploy = (!onlyMainBranches) || (branchName == "master" && !isSnapshot) || (branchName == "main" && !isSnapshot) || (branchName == "develop" && isSnapshot)
 
     if (shouldDeploy) {
       println "Deploying ${env.JOB_NAME} v${projectVersion}"
