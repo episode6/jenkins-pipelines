@@ -31,7 +31,7 @@ def deploy(boolean onlyMainBranches = true) {
 
     def branchName = env.BRANCH_NAME
     def isSnapshot = projectVersion.contains("SNAPSHOT")
-    def shouldDeploy = (!onlyMainBranches) || (branchName == "master" && !isSnapshot) || (branchName == "develop" && isSnapshot)
+    def shouldDeploy = (!onlyMainBranches) || (branchName == "master" && !isSnapshot) || (branchName == "main" && !isSnapshot) || (branchName == "develop" && isSnapshot)
 
     if (shouldDeploy) {
       println "Deploying ${env.JOB_NAME} v${projectVersion}"
