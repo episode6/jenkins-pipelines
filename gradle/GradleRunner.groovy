@@ -20,6 +20,7 @@ def buildAndTest() {
 }
 
 def deploy(boolean onlyMainBranches = true) {
+
   stage('deploy') {
     def projectVersion = getProjectVersion()
     if (!projectVersion || projectVersion == "unspecified") {
@@ -30,8 +31,20 @@ def deploy(boolean onlyMainBranches = true) {
     }
 
     def branchName = env.BRANCH_NAME
+
+    def gitTag = getGitTag()
+    if (gitTag) {
+      notifier.notifyPushbullet("Found git tag: $gitTag, branchName: $branchName")
+    } else {
+      notifier.notifyPushbullet("did not find git tag: $gitTag, branchName: $branchName")
+    }
+
+    
     def isSnapshot = projectVersion.contains("SNAPSHOT")
-    def shouldDeploy = (!onlyMainBranches) || (branchName == "master" && !isSnapshot) || (branchName == "main" && !isSnapshot) || (branchName == "develop" && isSnapshot)
+    def shouldDeploy = (!onlyMainBranches) ||
+      (branchName == "master") ||
+      (branchName == "main") ||
+      (branchName == "develop")
 
     if (shouldDeploy) {
       println "Deploying ${env.JOB_NAME} v${projectVersion}"
@@ -85,6 +98,11 @@ def collectHtmlReports(Map findIndexFilesParams) {
 def getProjectVersion() {
   sh './gradlew properties | grep -o \'^version: .*$\' | sed \'s/^version: //\' > __gradle_project.version'
   return "${readFile("__gradle_project.version")}".trim()
+}
+
+def getGitTag() {
+  sh 'git tag --points-at > __git_tag'
+  return "${readFile("__git_tag")}".trim()
 }
 
 return this
