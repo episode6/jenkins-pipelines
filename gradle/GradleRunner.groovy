@@ -20,8 +20,7 @@ def buildAndTest() {
 }
 
 def deploy(boolean onlyMainBranches = true) {
-
-  stage('deploy') {
+  stage('check-deploy') {
     def projectVersion = getProjectVersion()
     if (!projectVersion || projectVersion == "unspecified") {
       def err = "Could not read projectVersion for job: ${env.JOB_NAME}, deploy failed."
@@ -40,10 +39,12 @@ def deploy(boolean onlyMainBranches = true) {
       gitTag
 
     if (shouldDeploy) {
-      println "Deploying ${env.JOB_NAME} v${projectVersion}"
-      runGradle("deploy", "deploy", false)
-      if (!isSnapshot) {
-        notifier.notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}, tag: ${gitTag}")
+      stage('run-deploy') {
+        println "Deploying ${env.JOB_NAME} v${projectVersion}"
+        runGradle("deploy", "deploy", false)
+        if (!isSnapshot) {
+          notifier.notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}, tag: ${gitTag}")
+        }
       }
     } else {
       println "Skipping deploy of ${env.JOB_NAME} v${projectVersion}"
