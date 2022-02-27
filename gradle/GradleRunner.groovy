@@ -39,7 +39,6 @@ def deploy(boolean onlyMainBranches = true) {
       notifier.notifyPushbullet("did not find git tag: $gitTag, branchName: $branchName")
     }
 
-    
     def isSnapshot = projectVersion.contains("SNAPSHOT")
     def shouldDeploy = (!onlyMainBranches) ||
       (branchName == "master") ||
@@ -101,6 +100,7 @@ def getProjectVersion() {
 }
 
 def getGitTag() {
+  sh 'git fetch origin --tags'
   sh 'git tag --points-at > __git_tag'
   return "${readFile("__git_tag")}".trim()
 }
