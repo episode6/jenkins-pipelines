@@ -20,37 +20,34 @@ def buildAndTest() {
 }
 
 def deploy(boolean onlyMainBranches = true) {
+  stage('check-deploy') {
+    def projectVersion = getProjectVersion()
+    if (!projectVersion || projectVersion == "unspecified") {
+      def err = "Could not read projectVersion for job: ${env.JOB_NAME}, deploy failed."
+      notifier.notifyPushbullet(err)
+      error(err)
+      return
+    }
 
-  stage('deploy') {
-    stage('checkDeploy') {
-      def projectVersion = getProjectVersion()
-      if (!projectVersion || projectVersion == "unspecified") {
-        def err = "Could not read projectVersion for job: ${env.JOB_NAME}, deploy failed."
-        notifier.notifyPushbullet(err)
-        error(err)
-        return
-      }
+    def branchName = env.BRANCH_NAME
+    def gitTag = getGitTag()
+    def isSnapshot = projectVersion.contains("SNAPSHOT")
+    def shouldDeploy = (!onlyMainBranches) ||
+      (branchName == "master") ||
+      (branchName == "main") ||
+      (branchName == "develop") ||
+      gitTag
 
-      def branchName = env.BRANCH_NAME
-      def gitTag = getGitTag()
-      def isSnapshot = projectVersion.contains("SNAPSHOT")
-      def shouldDeploy = (!onlyMainBranches) ||
-        (branchName == "master") ||
-        (branchName == "main") ||
-        (branchName == "develop") ||
-        gitTag
-
-      if (shouldDeploy) {
-        stage('runDeploy') {
-          println "Deploying ${env.JOB_NAME} v${projectVersion}"
-          runGradle("deploy", "deploy", false)
-          if (!isSnapshot) {
-            notifier.notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}, tag: ${gitTag}")
-          }
+    if (shouldDeploy) {
+      stage('run-deploy') {
+        println "Deploying ${env.JOB_NAME} v${projectVersion}"
+        runGradle("deploy", "deploy", false)
+        if (!isSnapshot) {
+          notifier.notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}, tag: ${gitTag}")
         }
-      } else {
-        println "Skipping deploy of ${env.JOB_NAME} v${projectVersion}"
       }
+    } else {
+      println "Skipping deploy of ${env.JOB_NAME} v${projectVersion}"
     }
   }
 }
