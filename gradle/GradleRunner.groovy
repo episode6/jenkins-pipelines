@@ -31,25 +31,19 @@ def deploy(boolean onlyMainBranches = true) {
     }
 
     def branchName = env.BRANCH_NAME
-
     def gitTag = getGitTag()
-    if (gitTag) {
-      notifier.notifyPushbullet("Found git tag: $gitTag, branchName: $branchName")
-    } else {
-      notifier.notifyPushbullet("did not find git tag: $gitTag, branchName: $branchName")
-    }
-
     def isSnapshot = projectVersion.contains("SNAPSHOT")
     def shouldDeploy = (!onlyMainBranches) ||
       (branchName == "master") ||
       (branchName == "main") ||
-      (branchName == "develop")
+      (branchName == "develop") ||
+      gitTag
 
     if (shouldDeploy) {
       println "Deploying ${env.JOB_NAME} v${projectVersion}"
       runGradle("deploy", "deploy", false)
       if (!isSnapshot) {
-        notifier.notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}")
+        notifier.notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}, tag: ${gitTag}")
       }
     } else {
       println "Skipping deploy of ${env.JOB_NAME} v${projectVersion}"
