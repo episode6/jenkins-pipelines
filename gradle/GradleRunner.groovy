@@ -5,7 +5,7 @@
  * Pipeline Utility Steps Plugin: https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Utility+Steps+Plugin
  * HTML Publisher Plugin: https://wiki.jenkins-ci.org/display/JENKINS/HTML+Publisher+Plugin
  */
-def version = '0.0.9'
+def version = '0.0.10'
 notifier = load("common/Notifier.groovy")
 runner = load("common/Runner.groovy")
 
@@ -20,7 +20,7 @@ def buildAndTest() {
 }
 
 def deploy(boolean onlyMainBranches = true) {
-  stage('deploy') {
+  stage('check-deploy') {
     def projectVersion = getProjectVersion()
     if (!projectVersion || projectVersion == "unspecified") {
       def err = "Could not read projectVersion for job: ${env.JOB_NAME}, deploy failed."
@@ -30,14 +30,21 @@ def deploy(boolean onlyMainBranches = true) {
     }
 
     def branchName = env.BRANCH_NAME
+    def gitTag = getGitTag()
     def isSnapshot = projectVersion.contains("SNAPSHOT")
-    def shouldDeploy = (!onlyMainBranches) || (branchName == "master" && !isSnapshot) || (branchName == "main" && !isSnapshot) || (branchName == "develop" && isSnapshot)
+    def shouldDeploy = (!onlyMainBranches) ||
+      (branchName == "master") ||
+      (branchName == "main") ||
+      (branchName == "develop") ||
+      gitTag
 
     if (shouldDeploy) {
-      println "Deploying ${env.JOB_NAME} v${projectVersion}"
-      runGradle("deploy", "deploy", false)
-      if (!isSnapshot) {
-        notifier.notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}")
+      stage('run-deploy') {
+        println "Deploying ${env.JOB_NAME} v${projectVersion}"
+        runGradle("deploy", "deploy", false)
+        if (!isSnapshot) {
+          notifier.notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}, tag: ${gitTag}")
+        }
       }
     } else {
       println "Skipping deploy of ${env.JOB_NAME} v${projectVersion}"
@@ -85,6 +92,12 @@ def collectHtmlReports(Map findIndexFilesParams) {
 def getProjectVersion() {
   sh './gradlew properties | grep -o \'^version: .*$\' | sed \'s/^version: //\' > __gradle_project.version'
   return "${readFile("__gradle_project.version")}".trim()
+}
+
+def getGitTag() {
+  sh 'git fetch origin --tags'
+  sh 'git tag --points-at > __git_tag'
+  return "${readFile("__git_tag")}".trim()
 }
 
 return this
