@@ -29,11 +29,19 @@ def deploy(boolean onlyMainBranches = true) {
       return
     }
 
-    notifier.notifyPushbullet("Git branch = " + env.GIT_BRANCH)
+    notifier.notifyPushbullet("Git branch = " + env.BRANCH_NAME)
 
     def branchName = env.BRANCH_NAME
     def gitTag = getGitTag()
-    def isGitTagJob = gitTag && env.GIT_BRANCH == null
+    notifier.notifyPushbullet("Git branch = " + env.BRANCH_NAME + ", Git tag: " + gitTag)
+
+    // this is a hack: we don't want to deploy git tags automatically on the normal 
+    // branch jenkins jobs (this risks a redeploy for that release if theres not an 
+    // extra commit on top of the branch). So to avoid it we bank on the fact that
+    // release tags and release branches usually don't match (env.BRANCH_NAME is 
+    // actually the name of the tag for jenkins tag jobs)
+    def isGitTagJob = gitTag && branchName == gitTag
+
     def isSnapshot = projectVersion.contains("SNAPSHOT")
     def shouldDeploy = (!onlyMainBranches) ||
       (branchName == "master") ||
