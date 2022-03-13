@@ -31,12 +31,20 @@ def deploy(boolean onlyMainBranches = true) {
 
     def branchName = env.BRANCH_NAME
     def gitTag = getGitTag()
+
+    // THIS IS A HACK: we don't want to deploy git tags automatically on the normal 
+    // branch jenkins jobs (this risks a redeploy for that release if there's not an 
+    // extra commit on top of the branch). So to avoid it we bank on the fact that
+    // release tags and release branches usually don't match (env.BRANCH_NAME is 
+    // actually the name of the tag for jenkins tag jobs)
+    def isGitTagJob = gitTag && branchName == gitTag
+
     def isSnapshot = projectVersion.contains("SNAPSHOT")
     def shouldDeploy = (!onlyMainBranches) ||
       (branchName == "master") ||
       (branchName == "main") ||
       (branchName == "develop") ||
-      gitTag
+      isGitTagJob
 
     if (shouldDeploy) {
       stage('run-deploy') {
