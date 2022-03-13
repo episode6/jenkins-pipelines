@@ -39,13 +39,6 @@ def deploy(boolean onlyMainBranches = true) {
     // actually the name of the tag for jenkins tag jobs)
     def isGitTagJob = gitTag && branchName == gitTag
 
-    notifier.notifyPushbullet("Git branch = " + branchName + ", Git tag: " + gitTag)
-    if (isGitTagJob) {
-      notifier.notifyPushbullet("Yes, Git tag job")
-    } else {
-      notifier.notifyPushbullet("No, Not a git tag job")
-    }
-
     def isSnapshot = projectVersion.contains("SNAPSHOT")
     def shouldDeploy = (!onlyMainBranches) ||
       (branchName == "master") ||
@@ -56,7 +49,7 @@ def deploy(boolean onlyMainBranches = true) {
     if (shouldDeploy) {
       stage('run-deploy') {
         println "Deploying ${env.JOB_NAME} v${projectVersion}"
-        // runGradle("deploy", "deploy", false)
+        runGradle("deploy", "deploy", false)
         if (!isSnapshot) {
           notifier.notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}, tag: ${gitTag}")
         }
