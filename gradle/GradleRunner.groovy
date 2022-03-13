@@ -29,19 +29,22 @@ def deploy(boolean onlyMainBranches = true) {
       return
     }
 
+    notifier.notifyPushbullet("Git branch = " + env.GIT_BRANCH)
+
     def branchName = env.BRANCH_NAME
     def gitTag = getGitTag()
+    def isGitTagJob = gitTag && env.GIT_BRANCH == null
     def isSnapshot = projectVersion.contains("SNAPSHOT")
     def shouldDeploy = (!onlyMainBranches) ||
       (branchName == "master") ||
       (branchName == "main") ||
       (branchName == "develop") ||
-      gitTag
+      isGitTagJob
 
     if (shouldDeploy) {
       stage('run-deploy') {
         println "Deploying ${env.JOB_NAME} v${projectVersion}"
-        runGradle("deploy", "deploy", false)
+        // runGradle("deploy", "deploy", false)
         if (!isSnapshot) {
           notifier.notifyPushbullet("Succesfully deployed ${env.JOB_NAME} v${projectVersion}, tag: ${gitTag}")
         }
